@@ -1,5 +1,5 @@
 resource "aws_wafv2_web_acl" "web-acl" {
-name        = "aws-dev-web-acl"
+name        = var.web_acl_name
 description = "acl for dev waf"
 scope       = "REGIONAL"
 
@@ -109,14 +109,16 @@ visibility_config {
 }
 
 
-
-data "aws_api_gateway_rest_api" "rest_api" {
-for_each = var.apis
-name     = each.value.api_name
-}
-
 resource "aws_wafv2_web_acl_association" "api_gw_association" {
 for_each    = var.apis
-resource_arn = "arn:aws:apigateway:ap-southeast-2::/restapis/${data.aws_api_gateway_rest_api.rest_api[each.key].id}/stages/dev"
+resource_arn = "arn:aws:apigateway:${each.value.region}::/restapis/${each.value.api_id}/stages/${each.value.stage}"
 web_acl_arn = aws_wafv2_web_acl.web-acl.arn
 }
+
+output "web_acl_arn" {
+description = "The ARN of the created AWS WAFv2 Web ACL"
+value= aws_wafv2_web_acl.web-acl.arn
+}
+
+
+
